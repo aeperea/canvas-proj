@@ -2,7 +2,10 @@ node_modules/
 dist/
 .DS_Store
 *.log
-.vscode/
 .idea/
 .env
 .env.local
+
+# VS Code - track settings.json for team, ignore user-specific files
+.vscode/*
+!.vscode/settings.json
