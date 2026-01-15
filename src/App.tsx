@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, {useRef, useEffect} from 'react';
 import './App.css';
 
 const App: React.FC = () => {
@@ -15,12 +15,16 @@ const App: React.FC = () => {
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      
+
       // Draw a simple grid for reference
       drawGrid(ctx, canvas.width, canvas.height);
     };
 
-    const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    const drawGrid = (
+      ctx: CanvasRenderingContext2D,
+      width: number,
+      height: number
+    ) => {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
