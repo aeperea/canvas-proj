@@ -5,6 +5,11 @@ const STORAGE_KEY = 'canvas-proj-state';
 /**
  * Persistence utilities for localStorage
  * Saves/loads EditorState to browser storage
+ *
+ * Cross-tab synchronization:
+ * - When one tab saves state, other tabs receive a 'storage' event
+ * - The App.tsx listens for this event and reloads the state
+ * - This enables seamless multi-tab editing
  */
 
 /**

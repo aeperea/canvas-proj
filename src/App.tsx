@@ -19,6 +19,7 @@ const App: React.FC = () => {
     const savedState = loadState();
     return savedState || createInitialState();
   });
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const renderLoopRef = useRef<RenderLoop | null>(null);
   const isPanningRef = useRef(false);
   const lastMousePosRef = useRef({x: 0, y: 0});
@@ -58,6 +59,25 @@ const App: React.FC = () => {
       renderLoop.stop();
     };
   }, [state]);
+
+  // Listen for storage changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // Only react to our storage key changes
+      if (e.key !== 'canvas-proj-state') return;
+
+      // Load the new state from storage
+      const newState = loadState();
+      if (newState) {
+        setState(newState);
+        setLastSyncTime(Date.now());
+        renderLoopRef.current?.markDirty();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -157,6 +177,11 @@ const App: React.FC = () => {
         Shapes: {state.shapes.length} | Zoom: {state.transform.zoom.toFixed(2)}x
         | Pan: ({state.transform.panX.toFixed(0)},{' '}
         {state.transform.panY.toFixed(0)}) | 💾 Saving...
+        {lastSyncTime && (
+          <span style={{marginLeft: '8px', color: '#4ade80'}}>
+            ↔️ Synced across tabs
+          </span>
+        )}
       </div>
       <div className="help">
         <div>🖱️ Scroll to zoom | Middle-click/Ctrl+drag to pan</div>
