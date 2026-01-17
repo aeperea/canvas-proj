@@ -11,13 +11,22 @@ import {
 import {applyPan, applyZoom, screenToWorld} from './canvas/CoordinateTransform';
 import {RenderLoop} from './canvas/RenderLoop';
 import {render} from './canvas/Renderer';
+import {loadState, saveState} from './utils/persistence';
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [state, setState] = useState<EditorState>(createInitialState());
+  const [state, setState] = useState<EditorState>(() => {
+    const savedState = loadState();
+    return savedState || createInitialState();
+  });
   const renderLoopRef = useRef<RenderLoop | null>(null);
   const isPanningRef = useRef(false);
   const lastMousePosRef = useRef({x: 0, y: 0});
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
 
   // Initialize render loop
   useEffect(() => {
@@ -147,7 +156,7 @@ const App: React.FC = () => {
       <div className="status">
         Shapes: {state.shapes.length} | Zoom: {state.transform.zoom.toFixed(2)}x
         | Pan: ({state.transform.panX.toFixed(0)},{' '}
-        {state.transform.panY.toFixed(0)})
+        {state.transform.panY.toFixed(0)}) | 💾 Saving...
       </div>
       <div className="help">
         <div>🖱️ Scroll to zoom | Middle-click/Ctrl+drag to pan</div>
