@@ -63,6 +63,7 @@ export interface EditorState {
   selectedShapeId: string | null;
   transform: Transform;
   resizing: ResizingState | null;
+  dragging: DraggingState | null;
 }
 
 /**
@@ -86,4 +87,13 @@ export interface ResizingState {
   handle: ResizeHandle;
   startWorldPos: Point;
   startShape: Rectangle;
+}
+
+/**
+ * Active dragging state
+ */
+export interface DraggingState {
+  shapeId: string;
+  startWorldPos: Point;
+  startShapePos: Point;
 }

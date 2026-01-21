@@ -17,6 +17,7 @@ export function createInitialState(): EditorState {
       zoom: 1,
     },
     resizing: null,
+    dragging: null,
   };
 }
 

@@ -144,6 +144,7 @@ const App: React.FC = () => {
 
       // Check if clicked on a shape (simple hit test)
       let hitShapeId: string | null = null;
+      let hitShape: Rectangle | null = null;
       for (const shape of state.shapes) {
         if (
           shape.type === 'rectangle' &&
@@ -153,11 +154,24 @@ const App: React.FC = () => {
           worldPos.y <= shape.y + shape.height
         ) {
           hitShapeId = shape.id;
+          hitShape = shape;
           break;
         }
       }
 
-      setState((prevState) => selectShape(prevState, hitShapeId));
+      if (hitShapeId && hitShape) {
+        // Start dragging the shape
+        setState((prevState) => ({
+          ...selectShape(prevState, hitShapeId),
+          dragging: {
+            shapeId: hitShapeId,
+            startWorldPos: worldPos,
+            startShapePos: {x: hitShape.x, y: hitShape.y},
+          },
+        }));
+      } else {
+        setState((prevState) => selectShape(prevState, null));
+      }
     }
   };
 
@@ -180,6 +194,25 @@ const App: React.FC = () => {
         );
 
         return updateShape(prevState, prevState.resizing.shapeId, newRect);
+      });
+      return;
+    }
+
+    // Handle active drag
+    if (state.dragging) {
+      setState((prevState) => {
+        if (!prevState.dragging) return prevState;
+
+        const dx = worldPos.x - prevState.dragging.startWorldPos.x;
+        const dy = worldPos.y - prevState.dragging.startWorldPos.y;
+
+        const newX = prevState.dragging.startShapePos.x + dx;
+        const newY = prevState.dragging.startShapePos.y + dy;
+
+        return updateShape(prevState, prevState.dragging.shapeId, {
+          x: newX,
+          y: newY,
+        });
       });
       return;
     }
@@ -209,6 +242,16 @@ const App: React.FC = () => {
           setCursorStyle(getCursorForHandle(handle));
           return;
         }
+        // Check if hovering over the shape itself
+        if (
+          worldPos.x >= selectedShape.x &&
+          worldPos.x <= selectedShape.x + selectedShape.width &&
+          worldPos.y >= selectedShape.y &&
+          worldPos.y <= selectedShape.y + selectedShape.height
+        ) {
+          setCursorStyle('move');
+          return;
+        }
       }
     }
     setCursorStyle('grab');
@@ -216,8 +259,12 @@ const App: React.FC = () => {
 
   const handleMouseUp = () => {
     isPanningRef.current = false;
-    if (state.resizing) {
-      setState((prevState) => ({...prevState, resizing: null}));
+    if (state.resizing || state.dragging) {
+      setState((prevState) => ({
+        ...prevState,
+        resizing: null,
+        dragging: null,
+      }));
     }
   };
 
@@ -263,6 +310,7 @@ const App: React.FC = () => {
         <div>
           🔲 Drag corners to resize freely | Drag edges to resize one dimension
         </div>
+        <div>✋ Drag shape to move</div>
       </div>
     </div>
   );
