@@ -50,9 +50,9 @@ export function applyPan(transform: Transform, panDelta: Point): Transform {
 /**
  * Apply zoom centered on a world point
  * To zoom in at cursor position, we need to:
- * 1. Convert cursor to world space
- * 2. Apply zoom
- * 3. Adjust pan so the world point stays under cursor
+ * 1. Convert cursor to world space before zoom
+ * 2. Apply new zoom
+ * 3. Adjust pan so the same world point stays under cursor
  */
 export function applyZoom(
   transform: Transform,
@@ -60,26 +60,20 @@ export function applyZoom(
   cursorScreenPos: Point
 ): Transform {
   // Convert cursor to world space before zoom
-  const cursorWorldBefore = screenToWorld(cursorScreenPos, transform);
+  const worldPoint = screenToWorld(cursorScreenPos, transform);
 
   // Apply zoom
   const newZoom = Math.max(0.1, Math.min(5, transform.zoom * (1 + zoomDelta)));
 
-  // Convert cursor to world space after zoom
-  const cursorWorldAfter = screenToWorld(cursorScreenPos, {
-    ...transform,
-    zoom: newZoom,
-  });
-
-  // Calculate pan adjustment to keep world point under cursor
-  const worldDelta = {
-    x: cursorWorldBefore.x - cursorWorldAfter.x,
-    y: cursorWorldBefore.y - cursorWorldAfter.y,
-  };
+  // Calculate new pan to keep the world point under the cursor
+  // screenPos = worldPos * zoom + pan
+  // pan = screenPos - worldPos * zoom
+  const newPanX = cursorScreenPos.x - worldPoint.x * newZoom;
+  const newPanY = cursorScreenPos.y - worldPoint.y * newZoom;
 
   return {
-    panX: transform.panX + worldDelta.x * newZoom,
-    panY: transform.panY + worldDelta.y * newZoom,
+    panX: newPanX,
+    panY: newPanY,
     zoom: newZoom,
   };
 }
