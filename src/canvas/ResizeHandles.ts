@@ -81,35 +81,83 @@ export function applyResize(
 
   const newRect = {...originalRect};
 
+  const MIN_SIZE = 10;
+
   // Corner handles - resize both dimensions freely based on cursor position
   if (handle === 'top-left') {
-    newRect.x = originalRect.x + dx;
-    newRect.y = originalRect.y + dy;
-    newRect.width = Math.max(10, originalRect.width - dx);
-    newRect.height = Math.max(10, originalRect.height - dy);
+    const newWidth = originalRect.width - dx;
+    const newHeight = originalRect.height - dy;
+
+    if (newWidth >= MIN_SIZE) {
+      newRect.x = originalRect.x + dx;
+      newRect.width = newWidth;
+    } else {
+      newRect.x = originalRect.x + originalRect.width - MIN_SIZE;
+      newRect.width = MIN_SIZE;
+    }
+
+    if (newHeight >= MIN_SIZE) {
+      newRect.y = originalRect.y + dy;
+      newRect.height = newHeight;
+    } else {
+      newRect.y = originalRect.y + originalRect.height - MIN_SIZE;
+      newRect.height = MIN_SIZE;
+    }
   } else if (handle === 'top-right') {
-    newRect.y = originalRect.y + dy;
-    newRect.width = Math.max(10, originalRect.width + dx);
-    newRect.height = Math.max(10, originalRect.height - dy);
+    const newWidth = originalRect.width + dx;
+    const newHeight = originalRect.height - dy;
+
+    newRect.width = Math.max(MIN_SIZE, newWidth);
+
+    if (newHeight >= MIN_SIZE) {
+      newRect.y = originalRect.y + dy;
+      newRect.height = newHeight;
+    } else {
+      newRect.y = originalRect.y + originalRect.height - MIN_SIZE;
+      newRect.height = MIN_SIZE;
+    }
   } else if (handle === 'bottom-left') {
-    newRect.x = originalRect.x + dx;
-    newRect.width = Math.max(10, originalRect.width - dx);
-    newRect.height = Math.max(10, originalRect.height + dy);
+    const newWidth = originalRect.width - dx;
+    const newHeight = originalRect.height + dy;
+
+    if (newWidth >= MIN_SIZE) {
+      newRect.x = originalRect.x + dx;
+      newRect.width = newWidth;
+    } else {
+      newRect.x = originalRect.x + originalRect.width - MIN_SIZE;
+      newRect.width = MIN_SIZE;
+    }
+
+    newRect.height = Math.max(MIN_SIZE, newHeight);
   } else if (handle === 'bottom-right') {
-    newRect.width = Math.max(10, originalRect.width + dx);
-    newRect.height = Math.max(10, originalRect.height + dy);
+    newRect.width = Math.max(MIN_SIZE, originalRect.width + dx);
+    newRect.height = Math.max(MIN_SIZE, originalRect.height + dy);
   }
   // Edge handles - resize one dimension only
   else if (handle === 'top') {
-    newRect.y = originalRect.y + dy;
-    newRect.height = Math.max(10, originalRect.height - dy);
+    const newHeight = originalRect.height - dy;
+
+    if (newHeight >= MIN_SIZE) {
+      newRect.y = originalRect.y + dy;
+      newRect.height = newHeight;
+    } else {
+      newRect.y = originalRect.y + originalRect.height - MIN_SIZE;
+      newRect.height = MIN_SIZE;
+    }
   } else if (handle === 'right') {
-    newRect.width = Math.max(10, originalRect.width + dx);
+    newRect.width = Math.max(MIN_SIZE, originalRect.width + dx);
   } else if (handle === 'bottom') {
-    newRect.height = Math.max(10, originalRect.height + dy);
+    newRect.height = Math.max(MIN_SIZE, originalRect.height + dy);
   } else if (handle === 'left') {
-    newRect.x = originalRect.x + dx;
-    newRect.width = Math.max(10, originalRect.width - dx);
+    const newWidth = originalRect.width - dx;
+
+    if (newWidth >= MIN_SIZE) {
+      newRect.x = originalRect.x + dx;
+      newRect.width = newWidth;
+    } else {
+      newRect.x = originalRect.x + originalRect.width - MIN_SIZE;
+      newRect.width = MIN_SIZE;
+    }
   }
 
   return newRect;
