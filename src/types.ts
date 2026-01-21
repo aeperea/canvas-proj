@@ -62,4 +62,28 @@ export interface EditorState {
   shapes: Shape[];
   selectedShapeId: string | null;
   transform: Transform;
+  resizing: ResizingState | null;
+}
+
+/**
+ * Resize handle positions
+ */
+export type ResizeHandle =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'top'
+  | 'right'
+  | 'bottom'
+  | 'left';
+
+/**
+ * Active resizing state
+ */
+export interface ResizingState {
+  shapeId: string;
+  handle: ResizeHandle;
+  startWorldPos: Point;
+  startShape: Rectangle;
 }

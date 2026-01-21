@@ -1,6 +1,6 @@
 import {EditorState, Rect, Rectangle} from '../types';
 import {worldToScreen} from './CoordinateTransform';
-
+import {getHandlePositions} from './ResizeHandles';
 /**
  * Canvas Renderer - Draws the scene to canvas
  */
@@ -84,6 +84,43 @@ function drawRectangle(
       topLeft.y - 2,
       screenWidth + 4,
       screenHeight + 4
+    );
+
+    // Draw resize handles
+    drawResizeHandles(ctx, rect, state);
+  }
+}
+
+/**
+ * Draw resize handles for selected shape
+ */
+function drawResizeHandles(
+  ctx: CanvasRenderingContext2D,
+  rect: Rectangle,
+  state: EditorState
+): void {
+  const handles = getHandlePositions(rect);
+  const HANDLE_SIZE = 8;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ff6b6b';
+  ctx.lineWidth = 2;
+
+  for (const [handleType, handleWorldPos] of Object.entries(handles)) {
+    const handleScreenPos = worldToScreen(handleWorldPos, state.transform);
+
+    // Draw handle square
+    ctx.fillRect(
+      handleScreenPos.x - HANDLE_SIZE / 2,
+      handleScreenPos.y - HANDLE_SIZE / 2,
+      HANDLE_SIZE,
+      HANDLE_SIZE
+    );
+    ctx.strokeRect(
+      handleScreenPos.x - HANDLE_SIZE / 2,
+      handleScreenPos.y - HANDLE_SIZE / 2,
+      HANDLE_SIZE,
+      HANDLE_SIZE
     );
   }
 }

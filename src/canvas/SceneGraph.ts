@@ -16,6 +16,7 @@ export function createInitialState(): EditorState {
       panY: 0,
       zoom: 1,
     },
+    resizing: null,
   };
 }
 
