@@ -326,13 +326,50 @@ const App: React.FC = () => {
 
   const handleMouseUp = () => {
     isPanningRef.current = false;
-    if (state.resizing || state.dragging) {
-      // Finalize resize/drag by removing those states and pushing to history
-      updateStateWithHistory((prevState) => ({
-        ...prevState,
-        resizing: null,
-        dragging: null,
-      }));
+    if (state.resizing) {
+      // Check if shape actually changed
+      const shape = getShapeById(state, state.resizing.shapeId);
+      const originalShape = state.resizing.startShape;
+      const hasChanged =
+        !shape ||
+        shape.x !== originalShape.x ||
+        shape.y !== originalShape.y ||
+        shape.width !== originalShape.width ||
+        shape.height !== originalShape.height;
+
+      if (hasChanged) {
+        // Only push to history if we actually resized
+        updateStateWithHistory((prevState) => ({
+          ...prevState,
+          resizing: null,
+        }));
+      } else {
+        // Just clear the resizing state without history
+        setState((prevState) => ({
+          ...prevState,
+          resizing: null,
+        }));
+      }
+    } else if (state.dragging) {
+      // Check if shape actually moved
+      const shape = getShapeById(state, state.dragging.shapeId);
+      const originalPos = state.dragging.startShapePos;
+      const hasMoved =
+        !shape || shape.x !== originalPos.x || shape.y !== originalPos.y;
+
+      if (hasMoved) {
+        // Only push to history if we actually moved
+        updateStateWithHistory((prevState) => ({
+          ...prevState,
+          dragging: null,
+        }));
+      } else {
+        // Just clear the dragging state without history
+        setState((prevState) => ({
+          ...prevState,
+          dragging: null,
+        }));
+      }
     }
   };
 
