@@ -19,18 +19,55 @@ import {
   applyResize,
   getCursorForHandle,
 } from './canvas/ResizeHandles';
+import {
+  createHistoryState,
+  pushHistory,
+  undo,
+  redo,
+  getCurrentState,
+  canUndo,
+  canRedo,
+  type HistoryState,
+} from './utils/history';
+import {
+  isUndoShortcut,
+  isRedoShortcut,
+  getUndoShortcut,
+  getRedoShortcut,
+} from './utils/os';
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [state, setState] = useState<EditorState>(() => {
+  const initialState = createInitialState();
+  const [history, setHistory] = useState<HistoryState>(() => {
     const savedState = loadState();
-    return savedState || createInitialState();
+    return createHistoryState(savedState || initialState);
   });
+  const state = history.present;
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const [cursorStyle, setCursorStyle] = useState<string>('grab');
+  const [showHistoryStats, setShowHistoryStats] = useState(false);
   const renderLoopRef = useRef<RenderLoop | null>(null);
   const isPanningRef = useRef(false);
   const lastMousePosRef = useRef({x: 0, y: 0});
+
+  // Helper to update state through history
+  const updateStateWithHistory = (
+    updater: (state: EditorState) => EditorState
+  ) => {
+    setHistory((prevHistory) => {
+      const newState = updater(prevHistory.present);
+      return pushHistory(prevHistory, newState);
+    });
+  };
+
+  // Direct state update (for transient state like resizing, dragging, panning)
+  const setState = (updater: (state: EditorState) => EditorState) => {
+    setHistory((prevHistory) => ({
+      ...prevHistory,
+      present: updater(prevHistory.present),
+    }));
+  };
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -77,7 +114,7 @@ const App: React.FC = () => {
       // Load the new state from storage
       const newState = loadState();
       if (newState) {
-        setState(newState);
+        setHistory(createHistoryState(newState));
         setLastSyncTime(Date.now());
         renderLoopRef.current?.markDirty();
       }
@@ -85,6 +122,36 @@ const App: React.FC = () => {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Listen for undo/redo keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isUndoShortcut(e)) {
+        e.preventDefault();
+        setHistory((prevHistory) => {
+          const newHistory = undo(prevHistory);
+          if (newHistory) {
+            renderLoopRef.current?.markDirty();
+            return newHistory;
+          }
+          return prevHistory;
+        });
+      } else if (isRedoShortcut(e)) {
+        e.preventDefault();
+        setHistory((prevHistory) => {
+          const newHistory = redo(prevHistory);
+          if (newHistory) {
+            renderLoopRef.current?.markDirty();
+            return newHistory;
+          }
+          return prevHistory;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Mouse wheel zoom
@@ -260,7 +327,8 @@ const App: React.FC = () => {
   const handleMouseUp = () => {
     isPanningRef.current = false;
     if (state.resizing || state.dragging) {
-      setState((prevState) => ({
+      // Finalize resize/drag by removing those states and pushing to history
+      updateStateWithHistory((prevState) => ({
         ...prevState,
         resizing: null,
         dragging: null,
@@ -275,7 +343,8 @@ const App: React.FC = () => {
       state.transform
     );
 
-    setState((prevState) => {
+    // Create shapes are undo-able
+    updateStateWithHistory((prevState) => {
       const newRect = createRectangle(worldPos.x, worldPos.y);
       return addShape(prevState, newRect);
     });
@@ -303,6 +372,11 @@ const App: React.FC = () => {
             ↔️ Synced across tabs
           </span>
         )}
+        {showHistoryStats && (
+          <span style={{marginLeft: '8px', color: '#fbbf24'}}>
+            | Undo: {history.past.length} | Redo: {history.future.length}
+          </span>
+        )}
       </div>
       <div className="help">
         <div>🖱️ Scroll to zoom | Middle-click/Ctrl+drag to pan</div>
@@ -311,6 +385,9 @@ const App: React.FC = () => {
           🔲 Drag corners to resize freely | Drag edges to resize one dimension
         </div>
         <div>✋ Drag shape to move</div>
+        <div>
+          ⟲ {getUndoShortcut()} to undo | {getRedoShortcut()} to redo
+        </div>
       </div>
     </div>
   );
