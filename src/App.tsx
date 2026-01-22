@@ -34,6 +34,7 @@ import {
   isRedoShortcut,
   getUndoShortcut,
   getRedoShortcut,
+  getModifierSymbol,
 } from './utils/os';
 
 const App: React.FC = () => {
@@ -124,7 +125,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Listen for undo/redo keyboard shortcuts
+  // Listen for undo/redo and clear canvas keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isUndoShortcut(e)) {
@@ -147,6 +148,19 @@ const App: React.FC = () => {
           }
           return prevHistory;
         });
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'l') {
+        // Ctrl/Cmd+Shift+L to clear canvas
+        e.preventDefault();
+        const confirmed = window.confirm(
+          'Are you sure you want to delete all shapes? This cannot be undone.'
+        );
+        if (confirmed) {
+          updateStateWithHistory((prevState) => ({
+            ...prevState,
+            shapes: [],
+            selectedShapeId: null,
+          }));
+        }
       }
     };
 
@@ -339,9 +353,11 @@ const App: React.FC = () => {
 
       if (hasChanged) {
         // Only push to history if we actually resized
+        // Clear transient state (selection, resizing) when pushing to history
         updateStateWithHistory((prevState) => ({
           ...prevState,
           resizing: null,
+          selectedShapeId: null,
         }));
       } else {
         // Just clear the resizing state without history
@@ -359,9 +375,11 @@ const App: React.FC = () => {
 
       if (hasMoved) {
         // Only push to history if we actually moved
+        // Clear transient state (selection, dragging) when pushing to history
         updateStateWithHistory((prevState) => ({
           ...prevState,
           dragging: null,
+          selectedShapeId: null,
         }));
       } else {
         // Just clear the dragging state without history
@@ -423,7 +441,8 @@ const App: React.FC = () => {
         </div>
         <div>✋ Drag shape to move</div>
         <div>
-          ⟲ {getUndoShortcut()} to undo | {getRedoShortcut()} to redo
+          ⟲ {getUndoShortcut()} to undo | {getRedoShortcut()} to redo |{' '}
+          {getModifierSymbol()}+Shift+L to clear all shapes
         </div>
       </div>
     </div>
